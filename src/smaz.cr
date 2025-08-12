@@ -15,10 +15,16 @@ module Smaz
 
     def self.decompress(input : Bytes) : String
       return "" if input.empty?
-      r = Bytes.new input.size * 2
-      w = LibSmaz.decompress input.to_unsafe, input.bytesize, r.to_unsafe, r.size
-      raise Exception.new "smaz_decompress(#{input.to_unsafe}, #{input.size}, #{r.to_unsafe}, #{r.size}) returned #{w}" if w > r.size
-      String.new r[..w - 1]
+      os = input.size * 8
+      loop do
+        r = Bytes.new os
+        w = LibSmaz.decompress input.to_unsafe, input.bytesize, r.to_unsafe, r.size
+        if w > r.size
+          os *= 2
+          next
+        end
+        return String.new r[..w - 1]
+      end
     end
   end
 end
